@@ -55,6 +55,10 @@ class PostController extends Controller
 
             // Simpan file ke storage/app/public/images/posts
             $imagePath = $file->storeAs('images/posts', $fileName, 'public');
+
+            event(new \App\Events\FileUploaded($imagePath));
+
+
         }
 
         // 3. Simpan Data ke Database
@@ -111,6 +115,8 @@ class PostController extends Controller
 
             // Simpan gambar baru
             $imagePath = $file->storeAs('images/posts', $fileName, 'public');
+            event(new \App\Events\FileUploaded($imagePath));
+
         }
 
         // 3. Perbarui Data
