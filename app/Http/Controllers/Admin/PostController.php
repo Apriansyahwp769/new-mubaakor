@@ -8,7 +8,8 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage; // Penting untuk operasi file
+use Illuminate\Support\Facades\Storage; 
+use App\Events\FileUploaded; // 🔥 IMPORT EVENT KUSTOM 🔥
 
 class PostController extends Controller
 {
@@ -44,20 +45,16 @@ class PostController extends Controller
             'status' => 'required|in:draft,published',
         ]);
 
-        // 2. 🔥 LOGIKA UPLOAD GAMBAR BARU DENGAN CUSTOM FILENAME 🔥
+        // 2. LOGIKA UPLOAD GAMBAR BARU DENGAN CUSTOM FILENAME
         $imagePath = null;
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             $extension = $file->getClientOriginalExtension();
 
-            // Format: slug-judul-berita + timestamp + .ekstensi
             $fileName = Str::slug($request->title) . '-' . time() . '.' . $extension;
 
             // Simpan file ke storage/app/public/images/posts
             $imagePath = $file->storeAs('images/posts', $fileName, 'public');
-
-            event(new \App\Events\FileUploaded($imagePath));
-
 
         }
 
@@ -68,7 +65,7 @@ class PostController extends Controller
             'title' => $request->title,
             'slug' => Str::slug($request->title),
             'content' => $request->content,
-            'image_path' => $imagePath, // Menyimpan nama/path file
+            'image_path' => $imagePath, 
             'status' => $request->status,
             'published_at' => ($request->status == 'published') ? now() : null,
         ]);
@@ -99,24 +96,21 @@ class PostController extends Controller
             'status' => 'required|in:draft,published',
         ]);
 
-        $imagePath = $post->image_path; // Ambil path gambar lama
+        $imagePath = $post->image_path; 
 
-        // 2. 🔥 LOGIKA UPDATE GAMBAR BARU DENGAN CUSTOM FILENAME 🔥
+        // 2. LOGIKA UPDATE GAMBAR BARU DENGAN CUSTOM FILENAME 
         if ($request->hasFile('image')) {
             // Hapus gambar lama
             if ($post->image_path) {
                 Storage::disk('public')->delete($post->image_path);
             }
 
-            // Buat nama file baru (sama seperti di fungsi store)
+            // Buat nama file baru dan simpan
             $file = $request->file('image');
             $extension = $file->getClientOriginalExtension();
             $fileName = Str::slug($request->title) . '-' . time() . '.' . $extension;
-
-            // Simpan gambar baru
             $imagePath = $file->storeAs('images/posts', $fileName, 'public');
-            event(new \App\Events\FileUploaded($imagePath));
-
+            
         }
 
         // 3. Perbarui Data
@@ -125,7 +119,7 @@ class PostController extends Controller
             'title' => $request->title,
             'slug' => Str::slug($request->title),
             'content' => $request->content,
-            'image_path' => $imagePath, // Update dengan path baru atau path lama
+            'image_path' => $imagePath,
             'status' => $request->status,
             'published_at' => ($request->status == 'published' && !$post->published_at) ? now() : $post->published_at,
         ]);
